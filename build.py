@@ -60,7 +60,7 @@ def parse_markdown(file_path):
         "ai_beneficiary": "",
         "robotics_beneficiary": "",
         "value_chain": "",
-        "final_classification": "",
+        "final_classification": "TEMP_MARKER",
         "macro_risk": "",
         "moat_sources": "",
         "key_insights": [],
@@ -69,87 +69,84 @@ def parse_markdown(file_path):
     }
     
     lines = content.split('\n')
+    
+    # Extract title
+    for line in lines:
+        match = re.match(r'#\s+([^(]+)\s+\(([^)]+)\)', line.strip())
+        if match:
+            data["company_name"] = match.group(1).strip()
+            data["ticker"] = match.group(2).strip()
+            break
+    
+    # Parse sections
     current_section = None
     current_value = []
     
     for line in lines:
         line = line.strip()
         
-        if line.startswith('## Overview'):
-            continue
-        elif line.startswith('- **AI Software Vulnerability Score'):
-            match = re.search(r'(\d+)/10', line)
-            if match:
-                data["ai_score"] = match.group(1)
-        elif line.startswith('- **Robotics Vulnerability Score'):
-            match = re.search(r'(\d+)/10', line)
-            if match:
-                data["robotics_score"] = match.group(1)
-        elif line.startswith('- **AI Beneficiary'):
-            current_section = "ai_beneficiary"
-            current_value = [line.split(':', 1)[1].strip()]
-        elif line.startswith('- **Robotics Beneficiary'):
-            current_section = "robotics_beneficiary"
-            current_value = [line.split(':', 1)[1].strip()]
-        elif line.startswith('- **Value Chain Position'):
-            current_section = "value_chain"
-            current_value = [line.split(':', 1)[1].strip()]
-        elif line.startswith('- **Final Classification'):
-            current_section = "final_classification"
-            current_value = [line.split(':', 1)[1].strip()]
-        elif line.startswith('- **Macro Contagion Risk'):
-            current_section = "macro_risk"
-            current_value = [line.split(':', 1)[1].strip()]
-        elif line.startswith('## Moat Sources'):
-            current_section = "moat_sources"
-            current_value = []
-        elif line.startswith('## Key Insights'):
-            current_section = "key_insights"
-            current_value = []
-        elif line.startswith('### Q1'):
-            current_section = "q1"
-            current_value = []
-        elif line.startswith('### Q2'):
-            current_section = "q2"
-            current_value = []
-        elif line.startswith('### Q3'):
-            current_section = "q3"
-            current_value = []
-        elif line.startswith('### Q4'):
-            current_section = "q4"
-            current_value = []
-        elif line.startswith('### Q5'):
-            current_section = "q5"
-            current_value = []
-        elif line.startswith('### Q6'):
-            current_section = "q6"
-            current_value = []
-        elif line.startswith('### Q7'):
-            current_section = "q7"
-            current_value = []
-        elif line.startswith('### Q8'):
-            current_section = "q8"
-            current_value = []
-        elif line.startswith('# '):
-            match = re.match(r'#\s+([^(]+)\s+\(([^)]+)\)', line)
-            if match:
-                data["company_name"] = match.group(1).strip()
-                data["ticker"] = match.group(2).strip()
-        elif line and not line.startswith('#'):
-            if current_section in ["ai_beneficiary", "robotics_beneficiary", "value_chain", "final_classification", "macro_risk", "moat_sources", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]:
-                if line.startswith('- '):
-                    current_value.append(line[2:])
+        # Skip header lines
+        if not line or line.startswith('#'):
+            # Save current section before switching
+            if current_section and current_value:
+                if current_section == "key_insights":
+                    data[current_section] = [l.lstrip('- ') for l in current_value if l.strip()]
                 else:
-                    current_value.append(line)
+                    print(f"    Saving {current_section}: {current_value[:2]}")
+                    data[current_section] = " ".join(current_value).strip()
+            current_section = None
+            current_value = []
+            continue
+        
+        # Parse key-value pairs in Overview
+        if ':' in line:
+            key, _, value = line.partition(':')
+            key = key.strip().rstrip('*').strip('-* ')
+            value = value.strip()
+            
+            if key == "AI Software Vulnerability Score":
+                match = re.search(r'(\d+)', value)
+                if match:
+                    data["ai_score"] = match.group(1)
+            elif key == "Robotics Vulnerability Score":
+                match = re.search(r'(\d+)', value)
+                if match:
+                    data["robotics_score"] = match.group(1)
+            elif key == "AI Beneficiary":
+                data["ai_beneficiary"] = value
+            elif key == "Robotics Beneficiary":
+                data["robotics_beneficiary"] = value
+            elif key == "Value Chain Position":
+                data["value_chain"] = value
+            elif key == "Final Classification":
+                data["final_classification"] = value
+            elif key == "Macro Contagion Risk":
+                data["macro_risk"] = value
     
-    if current_section == "key_insights":
-        data["key_insights"] = [l.lstrip('- ') for l in current_value if l.strip()]
-    elif current_section:
-        data[current_section] = " ".join(current_value).strip()
+    # Also parse Moat Sources and Key Insights sections separately
+    in_moat = False
+    in_insights = False
+    moat_lines = []
+    insight_lines = []
     
-    for section in ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "moat_sources", "ai_beneficiary", "robotics_beneficiary", "macro_risk"]:
-        if isinstance(data.get(section), list):
-            data[section] = " ".join(data[section])
+    for line in lines:
+        line = line.strip()
+        if line == "## Moat Sources":
+            in_moat = True
+            in_insights = False
+        elif line == "## Key Insights":
+            in_moat = False
+            in_insights = True
+        elif line.startswith('## Pressure'):
+            in_moat = False
+            in_insights = False
+        elif in_moat and line:
+            moat_lines.append(line)
+        elif in_insights and line.startswith('- '):
+            insight_lines.append(line[2:])
+    
+    data["moat_sources"] = " ".join(moat_lines).strip()
+    data["key_insights"] = insight_lines
     
     return data
 
@@ -184,16 +181,10 @@ def generate_index(companies):
             "MoatSources": (c.get("moat_sources", "") or "")[:100] + "...",
         })
     
-    subs = {
-        **stats,
-        "Companies": company_data,
-    }
-    
     result = template
-    for key, value in subs.items():
-        result = result.replace(f"{{.{key}}}", str(value))
     
-    result = re.sub(r'\{\{range \.Companies\}\}.*?\{\{end\}\}', '', result, flags=re.DOTALL)
+    for key, value in stats.items():
+        result = result.replace("{{." + key + "}}", str(value))
     
     companies_html = ""
     for c in company_data:
@@ -225,7 +216,7 @@ def generate_index(companies):
             </a>
 '''
     
-    result = result.replace('{{range .Companies}}', '').replace('{{end}}', '')
+    result = re.sub(r'\{\{range \.\w+\}\}.*?\{\{end\}\}', '', result, flags=re.DOTALL)
     result = result.replace('id="companies"', 'id="companies">' + companies_html)
     
     return result
@@ -284,6 +275,8 @@ def main():
     companies = []
     for md_file in ANALYSIS_DIR.glob("*.md"):
         print(f"Processing {md_file.name}...")
+        data = parse_markdown(md_file)
+        print(f"  -> final_classification: {repr(data.get('final_classification', 'MISSING')[:30])}")
         data = parse_markdown(md_file)
         if data.get("ticker"):
             companies.append(data)
