@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsloppable Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .classification-UnsloppableBeneficiary { border-left: 4px solid #22c55e; }
+        .classification-UnsloppableHighTransitionRisk { border-left: 4px solid #3b82f6; }
+        .classification-UnsloppableMacroExposed { border-left: 4px solid #f59e0b; }
+        .classification-SloppableBeneficiary { border-left: 4px solid #ef4444; }
+        .classification-SloppableClankerable { border-left: 4px solid #dc2626; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-gray-900">Unsloppable Framework Analysis</h1>
+            <p class="mt-2 text-gray-600">AI & Robotics Disruption Risk Assessment for NASDAQ 100 Companies</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">Summary Statistics</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-green-600">{{.UnsloppableBeneficiary}}</div>
+                    <div class="text-sm text-gray-600">Unsloppable + Beneficiary</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-blue-600">{{.UnsloppableHighTransitionRisk}}</div>
+                    <div class="text-sm text-gray-600">High Transition Risk</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-yellow-600">{{.UnsloppableMacroExposed}}</div>
+                    <div class="text-sm text-gray-600">Macro Exposed</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-red-500">{{.SloppableBeneficiary}}</div>
+                    <div class="text-sm text-gray-600">Sloppable + Beneficiary</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-2xl font-bold text-red-700">{{.SloppableClankerable}}</div>
+                    <div class="text-sm text-gray-600">Sloppable + Clankerable</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4 flex flex-wrap gap-2">
+            <input type="text" id="search" placeholder="Search companies..." 
+                   class="px-4 py-2 border rounded-lg w-full md:w-auto"
+                   oninput="filterCompanies()">
+            <select id="filter" class="px-4 py-2 border rounded-lg" onchange="filterCompanies()">
+                <option value="">All Classifications</option>
+                <option value="Unsloppable + Beneficiary">Unsloppable + Beneficiary</option>
+                <option value="Unsloppable + High Transition Risk">Unsloppable + High Transition Risk</option>
+                <option value="Unsloppable + Macro Exposed">Unsloppable + Macro Exposed</option>
+                <option value="Sloppable + Beneficiary">Sloppable + Beneficiary</option>
+                <option value="Sloppable + Clankerable">Sloppable + Clankerable</option>
+            </select>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3" id="companies">
+            {{range .Companies}}
+            <a href="/unsloppable-analysis/{{.Ticker}}.html" 
+               class="block bg-white p-6 rounded-lg shadow hover:shadow-md transition classification-{{.ClassificationClass}}">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-bold">{{.Ticker}}</h3>
+                        <p class="text-sm text-gray-600">{{.CompanyName}}</p>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-medium rounded {{.BadgeClass}}">
+                        {{.ClassificationShort}}
+                    </span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                        <span class="text-gray-500">AI Vuln:</span>
+                        <span class="font-medium">{{.AIScore}}/10</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Robot Vuln:</span>
+                        <span class="font-medium">{{.RoboticsScore}}/10</span>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">
+                    {{.MoatSources}}
+                </div>
+            </a>
+            {{end}}
+        </div>
+    </main>
+
+    <footer class="bg-white border-t mt-12">
+        <div class="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
+            <p>Built with the Unsloppable Framework</p>
+        </div>
+    </footer>
+
+    <script>
+        function filterCompanies() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const filter = document.getElementById('filter').value;
+            const cards = document.querySelectorAll('#companies a');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                const classification = card.querySelector('span[class*="bg-"]').textContent;
+                
+                const matchesSearch = text.includes(search);
+                const matchesFilter = !filter || classification.includes(filter);
+                
+                card.style.display = matchesSearch && matchesFilter ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
